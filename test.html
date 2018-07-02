@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        canvas{
+            border: 1px black solid;
+        }
+        #textCanvas{
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+<canvas id='textCanvas' height=20></canvas>
+<img id='image'>
+<br>
+<textarea id='text'></textarea>
+<script>
+    var tCtx = document.getElementById('textCanvas').getContext('2d'),
+        imageElem = document.getElementById('image');
+
+    document.getElementById('text').addEventListener('keyup', function (){
+        tCtx.canvas.width = tCtx.measureText(this.value).width;
+        tCtx.fillText(this.value, 0, 10);
+        imageElem.src = tCtx.canvas.toDataURL();
+        console.log(imageElem.src);
+    }, false);
+
+</script>
+</body>
+</html>

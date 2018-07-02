@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hallo Gerda!</title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <script src="js/babylon.custom.js"></script>
+    <style>
+        /*Default style for an almost fullscreen rendering canvas.
+        Slightly too tall (height = 100% + greeting line) but that is not a problem,
+        since nothing happens at the bottom of the rendering canvas*/
+        html, body {
+            overflow: hidden;
+            width   : 100%;
+            height  : 100%;
+            margin  : 0;
+            padding : 0;
+        }
+
+        #renderCanvas {
+            width   : 100%;
+            height  : 100%;
+            touch-action: none;
+        }
+        canvas{
+            border: 1px black solid;
+        }
+    </style>
+
+</head>
+<body>
+<!--First line, it's a greeting. This is the only thing that is displayed as plain text-->
+Hoi Gerda, dit is een kaartje in de vorm van een 3D-boekje! Klik maar op de knop "Volgende" om naar de volgende pagina te gaan!
+<canvas id="renderCanvas" touch-action="none"></canvas>
+
+<script>
+
+    // surfaceCounter = the current page
+    // originalSurfaceCounter = the first page
+    var surfaceCounter;
+    var originalSurfaceCounter;
+    var surfaceCounterHasBeenSet = false;
+
+    // These are arrays with planes for the book pages. frontSurfaces are the odd pages, backSurfaces are the even ones.
+    var frontSurfaces = [];
+    var backSurfaces = [];
+
+    // This generates the material with a texture that contains the text from the text array.
+    // Each element on the array contains a different line of text.
+    var generateCardSurfaceTextPicture = function (textArray) {
+        var material = new BABYLON.StandardMaterial(textArray[0], scene);
+        material.diffuseTexture = new BABYLON.DynamicTexture(textArray[0], 512, scene, true);
+        // Black text on white background for the first line of text.
+        material.diffuseTexture.drawText(textArray[0], 40, 100, "bold 72px Arial", "black", "white");
+        for (var i = 1; i < textArray.length; i++) {
+            // The next lines don't need white background anymore.
+            material.diffuseTexture.drawText(textArray[i], 40, (100 + i * 100), "bold 72px Arial", "black",);
+        }
+        return material;
+    };
+
+    // This generates a plane for the page.
+    var createCardSurface = function (surface, textArray) {
+        var surfaceName;
+        if (surface === frontSurfaces) {
+            surfaceName = "front";
+        } else {
+            surfaceName = "back";
+        }
+        // Create the page
+        var page = BABYLON.MeshBuilder.CreatePlane(surfaceName + surface, {height:1, width: 1}, scene);
+        page.position = new BABYLON.Vector3(0.5,0,0);
+        // If it's the back page, the page needs to be flipped
+        if (surface === backSurfaces) {
+            page.rotation = new BABYLON.Vector3(0,Math.PI,0);
+        }
+        // Generate the text surface
+        page.material = generateCardSurfaceTextPicture(textArray);
+        surface.push(page);
+    };
+
+    var canvas = document.getElementById("renderCanvas"); // Get the rendering canvas element
+
+    var engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+
+    /******* Add the create scene function ******/
+    var createScene = function () {
+
+        // Create the scene space
+        var scene = new BABYLON.Scene(engine);
+
+        // Add a camera to the scene and attach it to the canvas
+        var camera = new BABYLON.ArcRotateCamera("Camera", -Math.PI / 2, Math.PI / 2, 4, BABYLON.Vector3.Zero(), scene);
+        camera.attachControl(canvas, true);
+
+        // Add lights to the scene
+        var light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
+        var light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 1, -1), scene);
+
+        // Add and manipulate meshes in the scene
+        // The meshes are the pages.
+        // The pages are in reverse order in the page arrays:
+        // frontSurfaces[0] is the last page and frontSurfaces[frontSurfaces.length - 1] is the first page.
+        // Hence they are added in reverse order
+        createCardSurface(backSurfaces, ["Dennis"]);
+        createCardSurface(frontSurfaces, ["Groetjes,"]);
+
+        createCardSurface(backSurfaces, ["Ik hoop dat", "ik word", "geselecteerd!"]);
+        createCardSurface(frontSurfaces, ["Dat is een", "extra traject", "van allerlei", "verschillende", "opleidingen"]);
+
+        createCardSurface(backSurfaces, ["Morgen ga ik", "een presenta-", "tie doen voor", "het Honours-", "programma!"]);
+        createCardSurface(frontSurfaces, ["Kom maar", "eens langs,", "als je wil!"]);
+
+        createCardSurface(backSurfaces, ["Het huis is", "van Stumass,", "een begeleid", "wonen-", "organisatie"]);
+        createCardSurface(frontSurfaces, ["Ik woon op", "Middelweg", "273 kamer 1"]);
+
+        createCardSurface(backSurfaces, ["Ik woon erg", "dicht bij Roy,", "Sanne en", "Kim"]);
+        createCardSurface(frontSurfaces, ["Verder moet", "ik nog", "zeggen dat", "ik nu in", "Zwolle woon!"]);
+
+        createCardSurface(backSurfaces, ["Mijn", "gemiddelde", "dit jaar is", "een 8,5!"]);
+        createCardSurface(frontSurfaces, ["Maar in", "theoretische", "vakken", "ben ik de", "beste"]);
+
+        createCardSurface(backSurfaces, ["Groepswerk", "kost me veel", "energie"]);
+        createCardSurface(frontSurfaces, ["Het bevalt me", "erg goed, ook", "al is het af en", "toe best", "zwaar"]);
+
+        createCardSurface(backSurfaces, ["Dan ga ik", "apps en sites", "maken!"]);
+        createCardSurface(frontSurfaces, ["Volgend jaar", "kies ik de", "richting", "Software", "Engineering"]);
+
+        createCardSurface(backSurfaces, ["Ik doe nu", "HBO-ICT op", "Windesheim", "te Zwolle"]);
+        createCardSurface(frontSurfaces, ["Ik heb het", "eerste jaar", "van mijn", "opleiding", "gehaald!"]);
+
+        createCardSurface(backSurfaces, ["Bovendien", "kende ik de", "program-", "meertaal hier-", "voor nog niet"]);
+        createCardSurface(frontSurfaces, ["Dit was lastig", "om te", "maken", "tussen al", "het werk"]);
+
+        createCardSurface(backSurfaces, ["Maar toch", "wilde ik dit", "kaartje", "afmaken"]);
+        createCardSurface(frontSurfaces, ["Ik weet het,", "ik ben een", "beetje laat", "met dit", "kaartje"]);
+
+        createCardSurface(backSurfaces, ["Hoe is het", "met je?", "Goed?"]);
+        createCardSurface(frontSurfaces, ["Hallo Gerda!"]);
+        // Calculate the amount of pages and initialize the current page number
+        if (!surfaceCounterHasBeenSet) {
+            surfaceCounter = frontSurfaces.length - 1;
+            originalSurfaceCounter = surfaceCounter;
+            surfaceCounterHasBeenSet = true;
+        }
+
+        /**Animations for the pages**/
+
+            // Animations for the pages consist of a few movements:
+            // 1) rotation around the y-axis
+            // 2) movement from right to left (when flapping forward, from left to right when flapping backward)
+            // 3) tilting the page and letting it fall down again
+            // Each of these movements needs a front page and a back page equivalent,
+            // and also a forward and backward movement equivalent,
+            // so that totals to 12 animation variables
+
+        // The animation: the property to be manipulated...
+        var rotateFrontPageForward =
+            new BABYLON.Animation(
+                "rotateFrontPageForward",
+                "rotation.y",
+                10,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            );
+        // and the movement steps
+        var rotateFrontPageForwardFrames = [];
+        rotateFrontPageForwardFrames.push({
+            frame:0,
+            value:0
+        });
+        rotateFrontPageForwardFrames.push({
+            frame:10,
+            value:Math.PI
+        });
+
+        var rotateFrontPageBackward =
+            new BABYLON.Animation(
+                "rotateFrontPageBackward",
+                "rotation.y",
+                10,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            );
+        var rotateFrontPageBackwardFrames = [];
+        rotateFrontPageBackwardFrames.push({
+            frame:0,
+            value:Math.PI
+        });
+        rotateFrontPageBackwardFrames.push({
+            frame:10,
+            value:0
+        });
+
+        var rotateBackPageForward =
+            new BABYLON.Animation(
+                "rotateBackPageForward",
+                "rotation.y",
+                10,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            );
+        var rotateBackPageForwardFrames = [];
+        rotateBackPageForwardFrames.push({
+            frame:0,
+            value:Math.PI
+        });
+        rotateBackPageForwardFrames.push({
+            frame:10,
+            value:Math.PI * 2
+        });
+
+        var rotateBackPageBackward =
+            new BABYLON.Animation(
+                "rotateBackPageBackward",
+                "rotation.y",
+                10,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            );
+        var rotateBackPageBackwardFrames = [];
+        rotateBackPageBackwardFrames.push({
+            frame:0,
+            value:Math.PI * 2
+        });
+        rotateBackPageBackwardFrames.push({
+            frame:10,
+            value:Math.PI
+        });
+
+        var moveCardForward =
+            new BABYLON.Animation(
+                "moveCardForward",
+                "position.x",
+                10,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            );
+        var moveCardForwardFrames = [];
+        for (var i = 0; i <= 10; i++) {
+            moveCardForwardFrames.push({
+                frame:i,
+                value:Math.cos(Math.PI/10*i) / 2
+            })
+        }
+        var moveCardBackward =
+            new BABYLON.Animation(
+                "moveCardBackward",
+                "position.x",
+                10,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            );
+        var moveCardBackwardFrames = [];
+        for (var i = 0; i <= 10; i++) {
+            moveCardBackwardFrames.push({
+                frame:i,
+                value:Math.cos(Math.PI/10*(-i + 10)) / 2
+            })
+        }
+
+        var moveCardUpForward =
+            new BABYLON.Animation(
+                "moveCardUpForward",
+                "position.z",
+                10,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            );
+        var moveCardUpForwardFrames = [];
+        for (var i = 0; i <= 10; i++) {
+            moveCardUpForwardFrames.push({
+                frame:i,
+                value:Math.sin(Math.PI/10*i) * -1 / 2
+            })
+        }
+
+        var moveCardUpBackward =
+            new BABYLON.Animation(
+                "moveCardUpBackward",
+                "position.z",
+                10,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            );
+        var moveCardUpBackwardFrames = [];
+        for (var i = 0; i <= 10; i++) {
+            moveCardUpBackwardFrames.push({
+                frame:i,
+                value:Math.sin(Math.PI/10*(-i + 10)) * -1 / 2
+            })
+        }
+
+        // Link the movement steps to the animations
+        rotateFrontPageForward.setKeys(rotateFrontPageForwardFrames);
+        rotateFrontPageBackward.setKeys(rotateFrontPageBackwardFrames);
+        rotateBackPageForward.setKeys(rotateBackPageForwardFrames);
+
+        // If we go to the next page, the first back page
+        // (so the last item in backSurfaces)
+        // will by default always be visible instead of the back page where we're at.
+        // This is because the pages are stacked on top of each other.
+        // To avoid this, we make the pages that we don't want and that are higher in the backSurfaces invisible.
+        var disappearFormerPage = new BABYLON.AnimationEvent(10, function() {
+            if ((surfaceCounter + 1) < originalSurfaceCounter) {
+                var formerPage = backSurfaces[surfaceCounter + 2];
+                formerPage.visibility = false;
+            }
+        }, false);
+
+        rotateBackPageBackward.setKeys(rotateBackPageBackwardFrames);
+        // We need to make all the pages visible again when we flap backwards. We do that here.
+        var reappearNextPage = new BABYLON.AnimationEvent(1, function() {
+            if (surfaceCounter < originalSurfaceCounter) {
+                var nextPage = backSurfaces[surfaceCounter + 1];
+                nextPage.visibility = true;
+            }
+        }, false);
+        rotateBackPageForward.addEvent(disappearFormerPage);
+        rotateBackPageBackward.addEvent(reappearNextPage);
+        moveCardForward.setKeys(moveCardForwardFrames);
+        moveCardBackward.setKeys(moveCardBackwardFrames);
+        moveCardUpForward.setKeys(moveCardUpForwardFrames);
+        moveCardUpBackward.setKeys(moveCardUpBackwardFrames);
+
+        // We create a GUI here
+        var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("myUI");
+        var nextPage = BABYLON.GUI.Button.CreateSimpleButton("nextPage", "Volgende pagina");
+        nextPage.width = "150px";
+        nextPage.height = "40px";
+        nextPage.color = "white";
+        nextPage.cornerRadius = 20;
+        nextPage.background = "green";
+        nextPage.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+        nextPage.onPointerUpObservable.add(function() {
+            // When we click on the button to go to the next page,
+            // we trigger six animations,
+            // three for the front pages and three for the back pages
+            if (surfaceCounter !== -1) {
+                surfaceCounter--;
+                scene.beginDirectAnimation(
+                    frontSurfaces[surfaceCounter + 1],
+                    [rotateFrontPageForward, moveCardForward, moveCardUpForward],
+                    0,
+                    10,
+                    false
+                );
+                scene.beginDirectAnimation(
+                    backSurfaces[surfaceCounter + 1],
+                    [rotateBackPageForward, moveCardForward, moveCardUpForward],
+                    0,
+                    10,
+                    false
+                );
+            }
+        });
+        advancedTexture.addControl(nextPage);
+
+        // We do the same with a button for the previous page, placed 50 pixels beneath the next page button
+        var previousPage = BABYLON.GUI.Button.CreateSimpleButton("previousPage", "Vorige pagina");
+        previousPage.width = "150px";
+        previousPage.height = "40px";
+        previousPage.color = "white";
+        previousPage.cornerRadius = 20;
+        previousPage.background = "green";
+        previousPage.top = 50;
+        previousPage.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+        previousPage.onPointerUpObservable.add(function() {
+            if (surfaceCounter !== originalSurfaceCounter) {
+                surfaceCounter++;
+                scene.beginDirectAnimation(
+                    frontSurfaces[surfaceCounter],
+                    [rotateFrontPageBackward, moveCardBackward, moveCardUpBackward],
+                    0,
+                    10,
+                    false
+                );
+                scene.beginDirectAnimation(
+                    backSurfaces[surfaceCounter],
+                    [rotateBackPageBackward, moveCardBackward, moveCardUpBackward],
+                    0,
+                    10,
+                    false
+                );
+            }
+        });
+        advancedTexture.addControl(previousPage);
+
+        return scene;
+    };
+
+
+    /******* End of the create scene function ******/
+
+    var scene = createScene(); //Call the createScene function
+
+    engine.runRenderLoop(function () { // Register a render loop to repeatedly render the scene
+        scene.render();
+    });
+
+
+    window.addEventListener("resize", function () { // Watch for browser/canvas resize events
+        engine.resize();
+    });
+</script>
+</body>
+</html>
